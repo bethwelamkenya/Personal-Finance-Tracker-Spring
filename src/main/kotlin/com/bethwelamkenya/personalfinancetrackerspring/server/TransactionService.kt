@@ -24,10 +24,10 @@ class TransactionService(
             throw AppException.InsufficientDetails() // 🔥 Throw exception
         }
         val targetUserEmail = transaction.targetUserEmail?.let { encryptionHelper.hashForFirebase(it) }
-        val encryptedAccountNumber = transaction.accountNumber?.let { encryptionHelper.hashForFirebase(it) }
-        val encryptedGoalName = transaction.goalName?.let { encryptionHelper.hashForFirebase(it) }
-        val encryptedTargetAccountNumber = transaction.targetAccountNumber?.let { encryptionHelper.hashForFirebase(it) }
-        val encryptedTargetGoalName = transaction.targetGoalName?.let { encryptionHelper.hashForFirebase(it) }
+        val encryptedAccountNumber = transaction.accountNumber?.let { encryptionHelper.encryptForFirebase(it) }
+        val encryptedGoalName = transaction.goalName?.let { encryptionHelper.encryptForFirebase(it) }
+        val encryptedTargetAccountNumber = transaction.targetAccountNumber?.let { encryptionHelper.encryptForFirebase(it) }
+        val encryptedTargetGoalName = transaction.targetGoalName?.let { encryptionHelper.encryptForFirebase(it) }
         val currency = transaction.currency ?: CurrencyType.USD.code
 
         val savedTransaction = Transaction(
@@ -107,6 +107,8 @@ class TransactionService(
     fun getAllTransactions(id: String): List<Transaction> {
         return transactionsRepository.findAll().filter { it.userEmail == id || it.targetUserEmail == id }.map {
             it.copy(
+                goalName = it.goalName?.let { name -> encryptionHelper.decryptFromFirebase(name) },
+                targetGoalName = it.targetGoalName?.let { name -> encryptionHelper.decryptFromFirebase(name) },
                 accountNumber = it.accountNumber?.let { number -> encryptionHelper.decryptFromFirebase(number) },
                 targetAccountNumber = it.targetAccountNumber?.let { number ->
                     encryptionHelper.decryptFromFirebase(number)

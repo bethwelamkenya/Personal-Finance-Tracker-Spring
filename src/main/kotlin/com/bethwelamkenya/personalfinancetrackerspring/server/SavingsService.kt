@@ -113,9 +113,15 @@ class SavingsService(
         if (transaction.accountNumber.isNullOrBlank() || transaction.type.isNullOrBlank() || transaction.amount?.let { it <= 0.0 } != false) {
             throw AppException.InsufficientDetails() // 🔥 Throw exception
         }
-        val savingsGoals = transaction.goalName?.let {
-            savingsRepository.findAllById(listOf(it)).filter { goal -> goal.userEmail == transaction.userEmail }
-        } ?: throw AppException.InsufficientDetails()
+        val hashed =
+            transaction.accountNumber?.let { encryptionHelper.hashForFirebase(encryptionHelper.decryptFromFirebase(it)) }
+                ?: throw AppException.InsufficientDetails()
+        val hashedName =
+            transaction.goalName?.let { encryptionHelper.hashForFirebase(encryptionHelper.decryptFromFirebase(it)) }
+                ?: throw AppException.InsufficientDetails()
+        val savingsGoals = hashedName.let {
+            savingsRepository.findAllById(listOf(it)).filter { goal -> goal.userEmail == hashed }
+        }
         if (savingsGoals.isEmpty()) throw AppException.SavingsGoalNotFound()
         val savingsGoal = savingsGoals[0]
         val finalBalance: Double

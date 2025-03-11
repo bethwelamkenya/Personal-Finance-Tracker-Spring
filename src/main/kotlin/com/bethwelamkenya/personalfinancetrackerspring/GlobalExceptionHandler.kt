@@ -24,7 +24,7 @@ class GlobalExceptionHandler {
             is AppException.InsufficientFunds -> HttpStatus.METHOD_NOT_ALLOWED
             is AppException.InvalidTransactionType -> HttpStatus.BAD_REQUEST
         }
-
+        println("the problem: ${ex.message}")
         return ResponseEntity.status(status).body(mapOf("error" to ex.message!!))
     }
 }

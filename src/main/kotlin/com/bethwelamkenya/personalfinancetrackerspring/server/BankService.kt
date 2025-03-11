@@ -107,14 +107,17 @@ class BankService(
         if (transaction.accountNumber.isNullOrBlank() || transaction.type.isNullOrBlank() || transaction.amount?.let { it <= 0.0 } != false) {
             throw AppException.InsufficientDetails() // 🔥 Throw exception
         }
-        val bankAccount = transaction.accountNumber?.let {
+        val hashed =
+            transaction.accountNumber?.let { encryptionHelper.hashForFirebase(encryptionHelper.decryptFromFirebase(it)) }
+                ?: throw AppException.InsufficientDetails()
+        val bankAccount = hashed.let {
             banksRepository.findById(it).orElseThrow { AppException.BankAccountNotFound() }
-        } ?: throw AppException.InsufficientDetails()
+        }
         val finalBalance: Double
         when (transaction.type) {
             TransactionType.WITHDRAW.name, TransactionType.DEPOSIT_GOAL.name,
             TransactionType.TRANSFER_OUT.name, TransactionType.TRANSFER_OUT_TO.name -> {
-                if (bankAccount.balance!! < transaction.amount!!){
+                if (bankAccount.balance!! < transaction.amount!!) {
                     throw AppException.InsufficientFunds()
                 }
                 finalBalance = bankAccount.balance!! - transaction.amount!!

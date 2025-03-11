@@ -36,6 +36,7 @@ class FirebaseEncryptionHelper {
      * 🔐 Hash a string into a Firebase-safe document ID using SHA-256.
      */
     fun hashForFirebase(input: String): String {
+        if (input.isEmpty()) return ""
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(input.toByteArray())
 
@@ -47,6 +48,7 @@ class FirebaseEncryptionHelper {
      * 🔒 Encrypts a string using AES-GCM (Firebase-safe output).
      */
     fun encryptForFirebase(plainText: String): String {
+        if (plainText.isEmpty()) return ""
         val cipher = Cipher.getInstance(AES_MODE)
         val iv = ByteArray(IV_SIZE).also { SecureRandom().nextBytes(it) }
         val gcmSpec = GCMParameterSpec(TAG_LENGTH, iv)

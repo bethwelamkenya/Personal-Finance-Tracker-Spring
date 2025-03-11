@@ -1,15 +1,13 @@
 package com.bethwelamkenya.personalfinancetrackerspring.domain
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "transactions")
 data class Transaction(
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // ✅ Auto-generate ID
     var id: Long = 0,
 
     @Column(name = "type", nullable = false)

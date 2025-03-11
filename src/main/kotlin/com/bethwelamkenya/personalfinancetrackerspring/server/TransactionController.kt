@@ -13,9 +13,11 @@ class TransactionController(
     private val savingsService: SavingsService
 ) {
 
-    @PostMapping("/{id}")
-    fun createTransaction(@PathVariable id: String, @RequestBody accountDTO: Transaction): ResponseEntity<Transaction> {
-        val transaction = transactionService.createTransaction(id, accountDTO, bankService, savingsService)
+    @PostMapping("/create/{id}")
+    fun createTransaction(@PathVariable id: String, @RequestBody transactionDTO: Transaction): ResponseEntity<Transaction> {
+        println("Received request to create transaction for id: $id")
+        println("Transaction data received: $transactionDTO")
+        val transaction = transactionService.createTransaction(id, transactionDTO, bankService, savingsService)
         return ResponseEntity.ok(transaction)
     }
 
