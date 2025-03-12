@@ -13,4 +13,5 @@ sealed class AppException(message: String) : RuntimeException(message) {
     class InsufficientFunds : AppException("Insufficient funds to complete transaction.")
     class InvalidTransactionType : AppException("Invalid transaction type.")
     class InvalidRequest : AppException("Invalid request data.")
+    class UnknownError : AppException("Unknown internal error occurred.")
 }

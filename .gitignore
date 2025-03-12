@@ -32,4 +32,4 @@ build/
 ### VS Code ###
 .vscode/
 
-my-banking-project-62e2a-firebase-adminsdk-fbsvc-1d4be59cd5.json
+src/main/resources/my-banking-project-62e2a-firebase-adminsdk-fbsvc-1d4be59cd5.json

@@ -8,28 +8,26 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/transactions")
 class TransactionController(
-    private val transactionService: TransactionService,
-    private val bankService: BankService,
-    private val savingsService: SavingsService
+    private val firebaseService: FirebaseService
 ) {
 
     @PostMapping("/create/{id}")
     fun createTransaction(@PathVariable id: String, @RequestBody transactionDTO: Transaction): ResponseEntity<Transaction> {
         println("Received request to create transaction for id: $id")
         println("Transaction data received: $transactionDTO")
-        val transaction = transactionService.createTransaction(id, transactionDTO, bankService, savingsService)
+        val transaction = firebaseService.createTransaction(id, transactionDTO)
         return ResponseEntity.ok(transaction)
     }
 
-    @GetMapping("/id/{id}")
-    fun getTransaction(@PathVariable id: Long): ResponseEntity<Transaction> {
-        val transaction = transactionService.getTransactionById(id)
+    @GetMapping("/id/email={email}&id={id}")
+    fun getTransaction(@PathVariable email: String, @PathVariable id: String): ResponseEntity<Transaction> {
+        val transaction = firebaseService.getTransactionById(email, id)
         return ResponseEntity.ok(transaction)
     }
 
     @GetMapping("/email/{userEmail}")
     fun getTransactions(@PathVariable userEmail: String): ResponseEntity<List<Transaction>> {
-        val transactions = transactionService.getAllTransactions(userEmail)
+        val transactions = firebaseService.getAllTransactions(userEmail)
         return ResponseEntity.ok(transactions)
     }
 }

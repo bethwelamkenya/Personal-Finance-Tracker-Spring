@@ -23,6 +23,7 @@ class GlobalExceptionHandler {
             is AppException.InvalidPassword -> HttpStatus.NOT_FOUND
             is AppException.InsufficientFunds -> HttpStatus.METHOD_NOT_ALLOWED
             is AppException.InvalidTransactionType -> HttpStatus.BAD_REQUEST
+            is AppException.UnknownError -> HttpStatus.PROCESSING
         }
         println("the problem: ${ex.message}")
         return ResponseEntity.status(status).body(mapOf("error" to ex.message!!))
