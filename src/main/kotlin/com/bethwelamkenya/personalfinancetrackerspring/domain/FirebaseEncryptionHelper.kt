@@ -87,14 +87,34 @@ class FirebaseEncryptionHelper {
     fun generateSalt(): String {
         val salt = ByteArray(16)
         SecureRandom().nextBytes(salt)
+        return Base64.getEncoder().encodeToString(salt)
+    }
+
+    fun generateSalt1(): String {
+        val salt = ByteArray(16)
+        SecureRandom().nextBytes(salt)
         return Base64.getUrlEncoder().withoutPadding().encodeToString(salt)
     }
 
     /**
      * 🔑 Hashes a password with the given salt using PBKDF2.
      */
-    fun hashPassword(password: String, salt: String): String {
-        val saltBytes = Base64.getUrlDecoder().decode(salt)
+    fun hashPassword(password: String, salt: String): String? {
+        if (password.isEmpty()) return null
+        // Use the standard Base64 decoder
+        val saltBytes = Base64.getDecoder().decode(salt)
+        val spec = PBEKeySpec(password.toCharArray(), saltBytes, iterations, keyLength)
+        val factory = SecretKeyFactory.getInstance(algorithm)
+        val hash = factory.generateSecret(spec).encoded
+        // If you want URL-safe output for the hash, you can still use URL-safe encoder here,
+        // but to match your Android output, you may want to use the standard encoder:
+        return Base64.getEncoder().withoutPadding().encodeToString(hash)
+    }
+
+    fun hashPassword1(password: String, salt: String): String? {
+        if (password.isEmpty()) return null
+        val saltBytes = Base64.getDecoder().decode(salt)
+//        val saltBytes = Base64.getUrlDecoder().decode(salt)
         val spec = PBEKeySpec(password.toCharArray(), saltBytes, iterations, keyLength)
         val factory = SecretKeyFactory.getInstance(algorithm)
         val hash = factory.generateSecret(spec).encoded

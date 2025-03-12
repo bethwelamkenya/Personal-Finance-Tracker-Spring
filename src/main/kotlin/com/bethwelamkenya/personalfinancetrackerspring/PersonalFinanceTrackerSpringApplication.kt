@@ -1,9 +1,10 @@
 package com.bethwelamkenya.personalfinancetrackerspring
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.runApplication
 
-@SpringBootApplication
+@SpringBootApplication(exclude = [DataSourceAutoConfiguration::class])
 class PersonalFinanceTrackerSpringApplication
 
 fun main(args: Array<String>) {

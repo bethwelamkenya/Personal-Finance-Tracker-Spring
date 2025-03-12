@@ -1,46 +1,31 @@
 package com.bethwelamkenya.personalfinancetrackerspring.domain
 
-import jakarta.persistence.*
-import java.time.LocalDateTime
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.google.cloud.firestore.annotation.Exclude
+import com.google.cloud.firestore.annotation.ServerTimestamp
+import java.time.Instant
+import java.util.*
 
-//@Entity
-//@Table(name = "transactions")
 data class Transaction(
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)  // ✅ Auto-generate ID
-    var id: String = "",
-
-//    @Column(name = "type", nullable = false)
+    var id: String? = "",
     var type: String? = TransactionType.DEPOSIT.name, // Store enum as a string
-
-//    @Column(name = "accountNumber", nullable = false)
     var accountNumber: String? = "",
-
-//    @Column(name = "userEmail", nullable = false)
-//    var userEmail: String? = "",
-
-//    @Column(name = "goalName", nullable = false)
     var goalName: String? = "",
-
-//    @Column(name = "targetAccountNumber", nullable = true)
     var targetAccountNumber: String? = null, // Nullable for non-transfer transactions
-
-//    @Column(name = "targetGoalName", nullable = true)
     var targetGoalName: String? = null, // Nullable for non-transfer transactions
-
-//    @Column(name = "targetUserEmail", nullable = true)
     var targetUserEmail: String? = null,    // Nullable, only needed for external transfers
-
-//    @Column(name = "amount", nullable = false)
     var amount: Double? = 0.0,            // Store transaction amount
-
-//    @Column(name = "timestamp", insertable = false, updatable = false)
-    val timestamp: LocalDateTime = LocalDateTime.now(),
-
-//    @Column(name = "currency", nullable = false)
+    // Previously, createdAt was declared as Long:
+    // val createdAt: Long = 0L
+    // Change it to Instant:
+//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "UTC")
+//    val timestamp: Instant? = null,
+    @ServerTimestamp
+    val timestamp: Date? = null,
     var currency: String? = "USD"
 ) {
-    fun getCurrency(): CurrencyType {
+    @Exclude
+    fun getTheCurrency(): CurrencyType {
         return currency?.let { CurrencyType.find(it) } ?: CurrencyType.USD
     }
 

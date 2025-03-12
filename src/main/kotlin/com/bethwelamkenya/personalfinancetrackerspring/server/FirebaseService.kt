@@ -6,12 +6,23 @@ import com.google.cloud.firestore.DocumentSnapshot
 import com.google.cloud.firestore.Firestore
 import com.google.firebase.cloud.FirestoreClient
 import org.springframework.stereotype.Service
+import javax.xml.transform.Source
 
 @Service
 class FirebaseService(
     private val encryptionHelper: FirebaseEncryptionHelper
 ) {
     private final val db: Firestore = FirestoreClient.getFirestore()
+//    init {
+//        // Disable network to allow for cache clearing
+//        db.disableNetwork().get();
+//
+//// Clear persistence
+//        db.clearPersistence().get();
+//
+//// Re-enable network
+//        db.enableNetwork().get();
+//    }
     private final val usersCollection = "bank_accounts"
     private final val banksCollection = "accounts"
     private final val savingsCollection = "savings"
@@ -28,8 +39,8 @@ class FirebaseService(
         // Check if user already exists
         val userDocument = db.collection(usersCollection).document(userId).get().get()
 
-        if (userDocument != null) {
-            throw AppException.UserAlreadyExists()
+        if (userDocument.exists()) {
+            throw AppException.UserAlreadyExists(user.email)
         }
 
         val encryptedName = user.name?.let { encryptionHelper.encryptForFirebase(it) }
@@ -48,13 +59,15 @@ class FirebaseService(
 
     fun logInUser(user: User): User {
         val id = user.email?.let { encryptionHelper.hashForFirebase(it) } ?: throw AppException.InsufficientDetails()
+        if (user.passwordHash.isNullOrBlank()) {
+            throw AppException.InsufficientDetails()
+        }
         val savedDocument = db.collection(usersCollection).document(id).get().get() ?: throw AppException.UserNotFound()
         val savedUser = savedDocument.toObject(User::class.java) ?: throw AppException.UserNotFound()
 
-        val salt: String = savedUser.salt!!
+        val salt = savedUser.salt!!
         val passwordHash = user.passwordHash?.let { encryptionHelper.hashPassword(password = it, salt = salt) }
 
-        println(passwordHash + " " + savedUser.passwordHash)
         if (passwordHash != savedUser.passwordHash) {
             throw AppException.InvalidPassword()
         }
@@ -63,7 +76,6 @@ class FirebaseService(
             name = savedUser.name?.let { encryptionHelper.decryptFromFirebase(it) },
             email = user.email
         )
-        println(decryptedUser.toString())
         return decryptedUser
     }
 
@@ -121,8 +133,8 @@ class FirebaseService(
         val accountDocument =
             db.collection(usersCollection).document(id).collection(banksCollection).document(accountId).get().get()
 
-        if (accountDocument != null) {
-            throw AppException.BankAccountAlreadyExists()
+        if (accountDocument.exists()) {
+            throw AppException.BankAccountAlreadyExists(bankAccount.accountNumber)
         }
 
         val encryptedAccountNumber = bankAccount.accountNumber?.let { encryptionHelper.encryptForFirebase(it) }
@@ -149,7 +161,7 @@ class FirebaseService(
 
     fun updateBankAccount(id: String, bankAccount: BankAccount): BankAccount {
         val existingAccountDocument =
-            db.collection(usersCollection).document(id).collection(banksCollection).document(bankAccount.id).get().get()
+            bankAccount.id?.let { db.collection(usersCollection).document(id).collection(banksCollection).document(it).get().get() }
                 ?: throw AppException.BankAccountNotFound()
         val existingAccount =
             existingAccountDocument.toObject(BankAccount::class.java) ?: throw AppException.UserNotFound()
@@ -230,8 +242,8 @@ class FirebaseService(
         val goalDocument =
             db.collection(usersCollection).document(id).collection(savingsCollection).document(goalId).get().get()
 
-        if (goalDocument != null) {
-            throw AppException.SavingsGoalAlreadyExists()
+        if (goalDocument.exists()) {
+            throw AppException.SavingsGoalAlreadyExists(savingsGoal.goalName)
         }
 
         val encryptedAccountNumber = savingsGoal.accountNumber?.let { encryptionHelper.encryptForFirebase(it) }
@@ -259,8 +271,10 @@ class FirebaseService(
 
     fun updateSavingsGoal(id: String, savingsGoal: SavingsGoal): SavingsGoal {
         val existingAccountDocument =
-            db.collection(usersCollection).document(id).collection(savingsCollection).document(savingsGoal.id).get()
-                .get() ?: throw AppException.SavingsGoalNotFound()
+            savingsGoal.id?.let {
+                db.collection(usersCollection).document(id).collection(savingsCollection).document(it).get()
+                    .get()
+            } ?: throw AppException.SavingsGoalNotFound()
         val existingAccount =
             existingAccountDocument.toObject(SavingsGoal::class.java) ?: throw AppException.SavingsGoalNotFound()
 
@@ -277,8 +291,10 @@ class FirebaseService(
             targetAmount = targetAmount,
             savedAmount = savedAmount
         )
-        db.collection(usersCollection).document(id).collection(savingsCollection).document(updatedGoal.id)
-            .set(updatedGoal).get() ?: throw AppException.UnknownError()
+        updatedGoal.id?.let {
+            db.collection(usersCollection).document(id).collection(savingsCollection).document(it)
+                .set(updatedGoal).get()
+        } ?: throw AppException.UnknownError()
         return updatedGoal.copy(
             goalName = updatedGoal.goalName?.let { encryptionHelper.decryptFromFirebase(it) },
             accountNumber = updatedGoal.accountNumber?.let {
@@ -436,10 +452,14 @@ class FirebaseService(
             db.collection(usersCollection).document(id).collection(transactionsCollection).add(savedTransaction).get()
                 ?: throw AppException.UnknownError()
         result.id
-        transaction.targetUserEmail?.let {
-            db.collection(usersCollection).document(it).collection(transactionsCollection).document(result.id)
+        transaction.targetUserEmail?.takeIf { it.isNotBlank() }?.let { targetEmail ->
+            db.collection(usersCollection)
+                .document(targetEmail)
+                .collection(transactionsCollection)
+                .document(result.id)
                 .set(savedTransaction).get() ?: throw AppException.UnknownError()
         }
+
         return savedTransaction.copy(
             accountNumber = transaction.accountNumber,
             goalName = transaction.goalName,
@@ -457,7 +477,7 @@ class FirebaseService(
         val savingsGoalDoc: DocumentSnapshot
         if (into) {
             hashedName =
-                transaction.targetGoalName?.let {
+                transaction.targetGoalName?.takeIf {it. isNotBlank() }?.let{
                     encryptionHelper.hashForFirebase(
                         encryptionHelper.decryptFromFirebase(
                             it
@@ -521,7 +541,7 @@ class FirebaseService(
         val accountDoc: DocumentSnapshot
         if (into) {
             hashedName =
-                transaction.targetAccountNumber?.let {
+                transaction.targetAccountNumber?.takeIf {it.isNotBlank()}?.let{
                     encryptionHelper.hashForFirebase(
                         encryptionHelper.decryptFromFirebase(
                             it
