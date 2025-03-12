@@ -7,7 +7,8 @@
 #ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 # Stage 1: Build stage
 
-FROM maven:3.8.7-openjdk-21-slim AS builder
+FROM openjdk:21-jdk-slim
+#FROM maven:3.8.7-openjdk-21-slim AS builder
 WORKDIR /app
 
 # Copy the pom.xml and download dependencies
