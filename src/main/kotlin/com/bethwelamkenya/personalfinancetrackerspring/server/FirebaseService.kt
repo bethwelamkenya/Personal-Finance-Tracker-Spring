@@ -50,7 +50,7 @@ class FirebaseService(
 
         val savedUser =
             User(id = userId, name = encryptedName, email = encryptedEmail, passwordHash = hashedPassword, salt = salt)
-        db.collection(usersCollection).document(userId).set(user).get() ?: throw AppException.UnknownError()
+        db.collection(usersCollection).document(userId).set(savedUser).get() ?: throw AppException.UnknownError()
         return savedUser.copy(
             name = user.name,
             email = user.email
