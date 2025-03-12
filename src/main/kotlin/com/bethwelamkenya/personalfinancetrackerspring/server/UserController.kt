@@ -4,7 +4,7 @@ import com.bethwelamkenya.personalfinancetrackerspring.domain.User
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-@CrossOrigin(origins = ["http://localhost:3000"])
+@CrossOrigin(origins = ["http://localhost:3000", "https://bekapersonalfinancetracker.netlify.app"])
 @RestController
 @RequestMapping("/users")
 class UserController(private val firebaseService: FirebaseService) {
